@@ -17,6 +17,31 @@ This demo:
 
 import sys
 import os
+import warnings
+
+# Keep the tutorial output focused on policy behavior, not migration noise.
+# This demo intentionally uses the lightweight legacy ``wrap()`` path because it
+# stays runnable with a local mock agent and no real LangChain/LLM dependencies.
+warnings.filterwarnings(
+    "ignore",
+    message="agent-os-kernel is deprecated and will be removed in a future release.*",
+    category=DeprecationWarning,
+)
+warnings.filterwarnings(
+    "ignore",
+    message="LangChainKernel.wrap\\(\\) is deprecated.*",
+    category=DeprecationWarning,
+)
+warnings.filterwarnings(
+    "ignore",
+    message="PromptInjectionDetector\\(\\) uses built-in sample rules.*",
+    category=UserWarning,
+)
+warnings.filterwarnings(
+    "ignore",
+    message="MCPSecurityScanner\\(\\) uses built-in sample rules.*",
+    category=UserWarning,
+)
 
 # Add project root to path so we can import agent_os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
@@ -66,7 +91,7 @@ class MockLangChainAgent:
 
     name = "mock-sql-agent"
 
-    def invoke(self, input_data, **kwargs):
+    def invoke1(self, input_data, **kwargs):
         if isinstance(input_data, dict):
             query = input_data.get("input", str(input_data))
         else:
@@ -74,7 +99,7 @@ class MockLangChainAgent:
         return f"Agent response to: {query}"
 
     def run(self, *args, **kwargs):
-        return self.invoke(args[0] if args else kwargs)
+        return self.invoke1(args[0] if args else kwargs)
 
 
 # ── The Demo ─────────────────────────────────────────────────────
@@ -97,7 +122,7 @@ def main():
     ]
 
     for query in test_queries:
-        result = agent.invoke({"input": query})
+        result = agent.invoke1({"input": query})
         ok(f"{query}")
         info(f"  -> {result}")
     print()
@@ -120,7 +145,9 @@ def main():
         log_all_calls=True,
     )
 
-    # Wrap the agent -- this is all it takes!
+    # For this no-dependency tutorial we keep the compatibility ``wrap()``
+    # surface because it works with the mock agent directly. In production
+    # LangChain apps, prefer ``kernel.as_middleware()`` with ``create_agent``.
     kernel = LangChainKernel(policy=policy)
     governed = kernel.wrap(agent)
 
@@ -143,7 +170,7 @@ def main():
     # Test same queries -- now with governance
     for query in test_queries:
         try:
-            result = governed.invoke({"input": query})
+            result = governed.invoke1({"input": query})
             ok(f"ALLOWED: {query}")
             info(f"  -> {result}")
         except PolicyViolationError as e:

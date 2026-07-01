@@ -60,7 +60,7 @@ def run_lab() -> None:
 
     # TODO (Step 2): Load your policy from the POLICY_YAML string above.
     # Hint: PolicyEvaluator has a load_policy_yaml() method.
-    # evaluator.load_policy_yaml(POLICY_YAML)
+    evaluator.load_policy_yaml(POLICY_YAML)
 
     print("=" * 60)
     print("Lab 1 — Policy Evaluation Results")
@@ -73,8 +73,9 @@ def run_lab() -> None:
         # TODO (Step 2): Evaluate the context against your policy.
         # Hint: evaluator.evaluate(context) returns a Decision object
         # with .allowed (bool) and .reason (str).
-        decision_allowed = True   # replace with: evaluator.evaluate(context).allowed
-        decision_reason = "(not evaluated yet)"  # replace with: decision.reason
+        decision = evaluator.evaluate(context)
+        decision_allowed = decision.allowed
+        decision_reason = decision.reason
 
         actual = "allow" if decision_allowed else "deny"
         match = actual == expected
@@ -96,12 +97,12 @@ def run_lab() -> None:
     # ---------------------------------------------------------------------------
     # TODO (Stretch goal): assert that each scenario matches its expected output
     # ---------------------------------------------------------------------------
-    # for tool_name, token_count, expected in SCENARIOS:
-    #     context = {"tool_name": tool_name, "token_count": token_count}
-    #     decision = evaluator.evaluate(context)
-    #     actual = "allow" if decision.allowed else "deny"
-    #     assert actual == expected, f"{tool_name}: expected {expected}, got {actual}"
-    # print("All assertions passed.")
+    for tool_name, token_count, expected in SCENARIOS:
+        context = {"tool_name": tool_name, "token_count": token_count}
+        decision = evaluator.evaluate(context)
+        actual = "allow" if decision.allowed else "deny"
+        assert actual == expected, f"{tool_name}: expected {expected}, got {actual}"
+    print("All assertions passed.")
 
 
 if __name__ == "__main__":
